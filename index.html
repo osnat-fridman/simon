@@ -17,26 +17,40 @@
 
         <p class="tagline">משחק זיכרון עם אורות וצלילים</p>
 
-        <div class="board">
+        <div class="board" id="board" data-phase="idle">
           <div class="board__grid">
-            <button type="button" class="pad pad--red" data-color="red" disabled>
+            <button type="button" class="pad pad--red" data-color="red" aria-disabled="true">
               <span class="pad__label">אדום</span>
             </button>
-            <button type="button" class="pad pad--blue" data-color="blue" disabled>
+            <button type="button" class="pad pad--blue" data-color="blue" aria-disabled="true">
               <span class="pad__label">כחול</span>
             </button>
-            <button type="button" class="pad pad--green" data-color="green" disabled>
+            <button type="button" class="pad pad--green" data-color="green" aria-disabled="true">
               <span class="pad__label">ירוק</span>
             </button>
-            <button type="button" class="pad pad--yellow" data-color="yellow" disabled>
+            <button type="button" class="pad pad--yellow" data-color="yellow" aria-disabled="true">
               <span class="pad__label">צהוב</span>
             </button>
           </div>
         </div>
 
-        <button type="button" class="button button--primary" id="start-button" disabled>
-          התחל
+        <div class="game-status" id="game-status" aria-live="polite" hidden>
+          <p class="game-status__text" id="status-text" hidden></p>
+          <div class="game-over" id="game-over" hidden>
+            <p class="game-over__message" id="game-over-message"></p>
+            <p class="game-over__score" id="game-over-score"></p>
+          </div>
+        </div>
+
+        <button type="button" class="button button--primary" id="start-button">התחל</button>
+        <button type="button" class="button button--secondary" id="play-again-button" hidden>
+          שחקו שוב
         </button>
+
+        <div class="notices" aria-live="polite">
+          <p class="notice" id="notice-save" hidden></p>
+          <p class="notice" id="notice-audio" hidden></p>
+        </div>
       </section>
 
       <section id="screen-about" class="screen" aria-labelledby="about-title" hidden>
@@ -58,6 +72,7 @@
         <div class="result-card">
           <h2 class="result-card__title">תוצאת המשחק האחרון</h2>
           <p class="result-card__empty" id="last-result">עדיין אין תוצאה</p>
+          <p class="result-card__note" id="last-result-note" hidden></p>
         </div>
 
         <button type="button" class="button button--secondary" data-nav="home">

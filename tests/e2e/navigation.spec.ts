@@ -21,7 +21,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('./');
 });
 
-test('home screen shows the board and a disabled start button', async ({ page }) => {
+test('home screen shows the board and an enabled start button', async ({ page }) => {
   await expect(page).toHaveTitle('סיימון');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('html')).toHaveAttribute('lang', 'he');
@@ -31,7 +31,7 @@ test('home screen shows the board and a disabled start button', async ({ page })
   for (const name of ['כחול', 'אדום', 'צהוב', 'ירוק']) {
     await expect(home(page).getByRole('button', { name, exact: true })).toBeVisible();
   }
-  await expect(page.getByRole('button', { name: 'התחל' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'התחל' })).toBeEnabled();
   await expect(about(page)).toBeHidden();
 });
 

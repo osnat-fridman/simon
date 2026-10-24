@@ -84,8 +84,9 @@ button {
   gap: var(--space-3);
 }
 
-.screen[hidden] {
-  display: none;
+.screen[hidden],
+[hidden] {
+  display: none !important;
 }
 
 /* Header */
@@ -204,8 +205,31 @@ button {
   -webkit-user-select: none;
 }
 
-.pad:disabled {
+.pad[aria-disabled='true'] {
   cursor: default;
+}
+
+/* While the sequence plays, resting pads dim slightly so the lit one stands out. */
+.board[data-phase='playback'] .pad:not(.pad--lit) {
+  filter: saturate(0.85) brightness(0.8);
+}
+
+/* Lit: strong highlight at the pad centre and a halo in the pad's own color. */
+.pad--lit {
+  z-index: 1;
+  background:
+    radial-gradient(
+      circle at var(--glow-x) var(--glow-y),
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0.45) 30%,
+      rgba(255, 255, 255, 0) 65%
+    ),
+    var(--pad-color);
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 255, 255, 0.7),
+    0 0 24px 6px color-mix(in srgb, var(--pad-color) 80%, transparent),
+    0 0 56px 16px color-mix(in srgb, var(--pad-color) 45%, transparent);
+  filter: brightness(1.12);
 }
 
 .pad__label {
@@ -264,6 +288,60 @@ button {
   transform: translate(-10%, -10%);
 }
 
+/* Game status and end-of-game area, inside the home screen. See ADR-8. */
+.game-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.game-status__text {
+  color: var(--color-text-secondary);
+  font-size: 18px;
+}
+
+.game-status__text--turn {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.game-over {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.game-over__message {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: var(--line-height-heading);
+}
+
+.game-over__score {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: var(--line-height-heading);
+}
+
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.notices:not(:has(.notice:not([hidden]))) {
+  display: none;
+}
+
+.notice {
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  text-align: center;
+}
+
 /* Buttons */
 .button {
   width: 100%;
@@ -313,6 +391,17 @@ button {
   font-size: 20px;
   font-weight: 700;
   line-height: var(--line-height-heading);
+}
+
+.result-card__score {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: var(--line-height-heading);
+}
+
+.result-card__note {
+  color: var(--color-text-secondary);
+  font-size: 16px;
 }
 
 .result-card__empty {
