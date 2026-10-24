@@ -20,6 +20,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('plays a full game to a win, then shows and keeps the result', async ({ page }) => {
+  // 55 taps plus clock steps; WebKit on CI runners needs more than the default 30s.
+  test.slow();
   await page.getByRole('button', { name: 'התחל' }).click();
   for (let stage = 1; stage <= 10; stage++) {
     await waitForPhase(page, 'input');

@@ -293,3 +293,23 @@ Vitest בודק את המנוע עם אקראיות ותזמון נשלטים. P
 **הקשר:** יש לבדוק Offline, עדכון בין שתי גרסאות וכשל Cache בלי Mock שמסתיר את פעולת ה-Cache.
 **החלטה:** פרויקט Playwright נפרד, `chromium-pwa`, מריץ את `tests/e2e/pwa/` עם Service Workers פעילים ובלי `page.clock`. Offline מדומה ב-`context.setOffline`. לבדיקת העדכון נבנים שני Builds (`dist-a`, `dist-b`) עם `SIMON_BUILD_ID` שונה; המזהה מוזרק ב-`define` (`__BUILD_ID__`) ומסומן ב-`<html data-build>`, וכך ה-JS ו-`sw.js` שונים באמת. שרת Node זעיר (`static-server.ts`) מחליף תיקייה ויכול להחזיר 500 לקובץ אחד. מחיקת נתוני אתר נעשית ב-CDP. WebKit אינו מריץ את בדיקות ה-Service Worker.
 **השלכות:** ה-CI הקיים מריץ את הבדיקות ללא שינוי. התנהגות iOS/Safari ב-PWA תיבדק במכשיר אמיתי ב-Milestone 5. `dist-*/` נוספו ל-`.gitignore`.
+
+### ADR-15: Workflow אחד עם Job בדיקה ו-Job פריסה, מעל Build יחיד
+**הקשר:** יש לפרסם בדיוק את התוצר שנבדק, לא לפרסם מ-Pull Request, ולמנוע פריסות חופפות.
+**החלטה:** `.github/workflows/ci.yml` כולל Job `test` שבונה את `dist/` פעם אחת ומריץ עליו את Playwright (`SIMON_SKIP_BUILD=1` גורם ל-`playwright.config.ts` להגיש את `dist/` הקיים בלי לבנות מחדש). רק ב-Push ל-`main` ה-Job מעלה את אותו `dist/` באמצעות `configure-pages` ו-`upload-pages-artifact`. Job `deploy` תלוי ב-`test`, רץ רק ב-Push ל-`main`, מקבל לבדו `pages: write` ו-`id-token: write`, משתמש ב-Environment `github-pages` ורץ בסדרת Concurrency `pages` ללא ביטול. Concurrency של כל ה-Workflow מבטל ריצה קודמת רק ב-Pull Request. בכשל נשמרים `test-results/` (כולל Trace) כ-Artifact ל-7 ימים. כל ה-Actions נעולים ל-Commit SHA של הגרסה העדכנית.
+**השלכות:** כשל בכל שלב מונע פריסה והאתר הקיים נשאר. הגדרת Pages ב-Settings (Source: GitHub Actions) נדרשת פעם אחת.
+
+### ADR-16: מזהה הגרסה הוא ה-Commit
+**הקשר:** לפי `vite.config.ts`, ללא `SIMON_BUILD_ID` המזהה הוא גרסת `package.json`, שאינה משתנה בין פריסות.
+**החלטה:** ה-CI בונה עם `SIMON_BUILD_ID=${{ github.sha }}`. המזהה מופיע ב-`<html data-build>` ומשנה את ה-JS ואת `sw.js` בכל פריסה.
+**השלכות:** אפשר לזהות איזו גרסה חיה ולבדוק עדכון בין שתי גרסאות אמיתיות. כל Push ל-`main`, גם שינוי מסמך בלבד, יוצר גרסת Service Worker חדשה שתופעל אחרי סגירת הלשוניות.
+
+### ADR-17: בדיקות מול האתר החי בפרויקט Playwright נפרד
+**הקשר:** ה-CI רץ לפני הפריסה ולכן אינו יכול לבדוק את האתר החי.
+**החלטה:** `tests/e2e/live/` רץ רק כשמוגדר `SIMON_LIVE_URL` (`npm run test:live`, ברירת המחדל היא כתובת האתר), בפרויקט `live` ב-Chromium עם Service Workers ובלי `webServer`. בדיקת העדכון רצה רק עם `SIMON_LIVE_UPDATE=1`: היא מתחילה משחק וממתינה (עד 18 דקות) לפריסה הבאה. כל שאר הפרויקטים מתעלמים מ-`live/**`.
+**השלכות:** הבדיקה ידנית ואינה חלק מהתנאי לפריסה. התנהגות Safari ו-PWA ב-iPhone נבדקת במכשיר אמיתי בלבד.
+
+### ADR-18: הארכת זמן הבדיקה של משחק מלא
+**הקשר:** ב-CI הבדיקה ״plays a full game to a win״ נכשלה ב-WebKit בכל ריצה מאז Milestone 2, בחריגה מ-30 שניות. בניסיון החוזר היא הגיעה לסוף המשחק לפני החריגה, ובמחשב מקומי היא נמשכת כ-9 שניות; זו איטיות של ה-Runner ולא תקיעה בממשק.
+**החלטה:** `test.slow()` לבדיקה הזו בלבד (פי 3 מהזמן).
+**השלכות:** אין שינוי בקוד האפליקציה. אם תופיע תקיעה אמיתית, ה-Trace שנשמר ב-CI יאפשר לאבחן אותה.

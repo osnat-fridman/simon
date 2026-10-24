@@ -59,4 +59,5 @@
 > Claude ממלא זאת ברגע שהאפליקציה יכולה לרוץ (בדרך כלל בסיום Milestone 1), ומעדכן אם משהו משתנה.
 - **הרצה (dev):** `npm run dev` (נפתח בכתובת http://localhost:5173/simon/)
 - **בדיקות (test):** `npm run typecheck`, `npm test` (Vitest), `npm run test:e2e` (Playwright, מול Build)
+- **אתר חי:** https://osnat-fridman.github.io/simon/ — מתפרסם אוטומטית מ-`main` אחרי שהבדיקות עוברות. בדיקה מול האתר החי: `npm run test:live`.
 - **PWA / Offline:** פועל רק ב-Build: `npm run build && npm run preview` (נפתח בכתובת http://localhost:4173/simon/). ב-`npm run dev` אין Service Worker.
