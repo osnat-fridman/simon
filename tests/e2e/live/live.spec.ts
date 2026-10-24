@@ -111,7 +111,8 @@ test('a new live version waits during a game and activates after the tab closes'
         page.evaluate(async () => {
           const registration = await navigator.serviceWorker.getRegistration();
           await registration?.update().catch(() => undefined);
-          return Boolean(registration?.waiting || registration?.installing);
+          // Waiting means the new version is fully downloaded and ready to take over.
+          return Boolean(registration?.waiting);
         }),
       { timeout: 18 * 60_000, intervals: [15_000] },
     )
@@ -127,15 +128,20 @@ test('a new live version waits during a game and activates after the tab closes'
   await waitForPhaseRealTime(page, 'lost');
   expect(await savedScore(page)).toBe(0);
 
-  // Closing the only tab lets the new version take over on the next visit.
+  // Closing the only tab lets the new version take over. Like a user, close and reopen:
+  // a reload would keep the old version in control, since the page never fully goes away.
   await page.close();
-  const next = await context.newPage();
-  await next.goto('./');
+  let next = await context.newPage();
   await expect
-    .poll(async () => {
-      await next.reload();
-      return buildId(next);
-    })
+    .poll(
+      async () => {
+        await next.close();
+        next = await context.newPage();
+        await next.goto('./');
+        return buildId(next);
+      },
+      { timeout: 30_000, intervals: [2_000] },
+    )
     .not.toBe(oldId);
   console.log(`Live version after: ${await buildId(next)}`);
   expect(await savedScore(next)).toBe(0);
