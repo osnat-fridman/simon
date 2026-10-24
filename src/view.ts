@@ -15,7 +15,8 @@ export const TEXT = {
 
 export interface GameView {
   render(state: GameState): void;
-  light(color: Color | null): void;
+  /** Lights one pad, every pad ('all'), or none (null). */
+  light(color: Color | 'all' | null): void;
   showLastResult(score: number | null, saved: boolean): void;
   setSaveNotice(visible: boolean): void;
   setAudioNotice(visible: boolean): void;
@@ -116,7 +117,7 @@ export function createDomView(handlers: ViewHandlers): GameView {
     },
 
     light(color) {
-      for (const [name, pad] of pads) pad.classList.toggle('pad--lit', name === color);
+      for (const [name, pad] of pads) pad.classList.toggle('pad--lit', color === 'all' || name === color);
     },
 
     showLastResult(score, saved) {

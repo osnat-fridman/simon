@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createController } from '../../src/controller';
 import { COLORS, STAGE_COUNT, type Color, type GameState } from '../../src/game/engine';
-import { FLASH_MS, GAP_MS, ROUND_PAUSE_MS } from '../../src/game/timing';
+import {
+  FLASH_MS,
+  GAP_MS,
+  ROUND_PAUSE_MS,
+  WIN_FINALE_MS,
+  WIN_PAUSE_MS,
+  WIN_STEP_MS,
+} from '../../src/game/timing';
 import { createSequencePlayer } from '../../src/sequence-player';
 import type { GameView } from '../../src/view';
 
@@ -15,7 +22,7 @@ function playbackMs(length: number): number {
 }
 
 function setup({ saveOk = true, stored = null as number | null, rngIndex = 0 } = {}) {
-  const lit: (Color | null)[] = [];
+  const lit: (Color | 'all' | null)[] = [];
   const view: GameView & { lastResult?: [number | null, boolean]; saveNotice?: boolean } = {
     render: vi.fn(),
     light: (color) => lit.push(color),
@@ -99,6 +106,49 @@ describe('controller', () => {
     controller.pressPad('blue');
     expect(controller.state.phase).toBe('won');
     expect(results.save).toHaveBeenCalledOnce();
+  });
+
+  it('runs the light twice around the board, then flashes every pad, after a win', async () => {
+    const { controller, audio, lit } = setup();
+    controller.start();
+    for (let stage = 1; stage <= STAGE_COUNT; stage++) await answerStage(controller);
+    const tones = audio.play.mock.calls.length;
+    const from = lit.length;
+    await vi.advanceTimersByTimeAsync(WIN_PAUSE_MS + 8 * WIN_STEP_MS + WIN_FINALE_MS);
+    const lap = ['red', 'blue', 'yellow', 'green'];
+    expect(lit.slice(from).filter((c) => c !== null)).toEqual([...lap, ...lap, 'all']);
+    expect(lit.at(-1)).toBe(null);
+    // Light only: no tone is played during the celebration.
+    expect(audio.play.mock.calls.length).toBe(tones);
+  });
+
+  it('stops the win lap at once when playing again or leaving the screen', async () => {
+    const { controller, lit } = setup();
+    controller.start();
+    for (let stage = 1; stage <= STAGE_COUNT; stage++) await answerStage(controller);
+    await vi.advanceTimersByTimeAsync(WIN_PAUSE_MS + WIN_STEP_MS / 2);
+    controller.onScreenChange('about');
+    expect(lit.at(-1)).toBe(null);
+    const count = lit.length;
+    await vi.runAllTimersAsync();
+    expect(lit.slice(count).every((color) => color === null)).toBe(true);
+
+    controller.onScreenChange('home');
+    expect(controller.state.phase).toBe('won');
+    controller.start();
+    expect(controller.state.phase).toBe('playback');
+    expect(lit.at(-1)).toBe(null);
+  });
+
+  it('does not run the win lap after a loss', async () => {
+    const { controller, lit } = setup({ rngIndex: 0 });
+    controller.start();
+    await waitForInput(controller);
+    controller.pressPad('red');
+    expect(controller.state.phase).toBe('lost');
+    const count = lit.length;
+    await vi.runAllTimersAsync();
+    expect(lit.slice(count).every((color) => color === null)).toBe(true);
   });
 
   it('loses on the first wrong press and saves completed stages', async () => {
@@ -196,7 +246,7 @@ describe('controller', () => {
 
 describe('controller: background and return', () => {
   // Colors lit by playback, ignoring the null "all off" entries.
-  const shown = (lit: (Color | null)[], from = 0) => lit.slice(from).filter((c) => c !== null);
+  const shown = (lit: (Color | 'all' | null)[], from = 0) => lit.slice(from).filter((c) => c !== null);
 
   it('pauses mid-playback when hidden and never lights afterwards', async () => {
     const { controller, audio, lit } = setup();

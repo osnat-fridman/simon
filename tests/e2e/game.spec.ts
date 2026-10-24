@@ -14,6 +14,7 @@ import {
   wrong,
   openAbout,
 } from './helpers';
+import { WIN_FINALE_MS, WIN_PAUSE_MS, WIN_STEP_MS } from '../../src/game/timing';
 
 test.beforeEach(async ({ page }) => {
   await page.clock.install({ time: CLOCK_START });
@@ -37,6 +38,16 @@ test('plays a full game to a win, then shows and keeps the result', async ({ pag
   await expect(home(page).getByText('10 מתוך 10')).toBeVisible();
   await expect(page.getByRole('button', { name: 'שחקו שוב' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'התחל' })).toBeHidden();
+
+  // Win lap: the light starts at the top-left pad, ends with every pad lit, then all go dark.
+  const lit = page.locator('.pad--lit');
+  await page.clock.runFor(WIN_PAUSE_MS + WIN_STEP_MS / 2);
+  await expect(lit).toHaveCount(1);
+  await expect(pad(page, 'red')).toHaveClass(/pad--lit/);
+  await page.clock.runFor(8 * WIN_STEP_MS);
+  await expect(lit).toHaveCount(4);
+  await page.clock.runFor(WIN_FINALE_MS);
+  await expect(lit).toHaveCount(0);
 
   // No 11th stage starts.
   await page.clock.runFor(5000);

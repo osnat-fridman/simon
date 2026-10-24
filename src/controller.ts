@@ -12,10 +12,20 @@ import {
   type GameState,
   type Rng,
 } from './game/engine';
-import { PRESS_FLASH_MS, ROUND_PAUSE_MS } from './game/timing';
+import {
+  PRESS_FLASH_MS,
+  ROUND_PAUSE_MS,
+  WIN_FINALE_MS,
+  WIN_LAPS,
+  WIN_PAUSE_MS,
+  WIN_STEP_MS,
+} from './game/timing';
 import { INITIAL_SCREEN, type Screen } from './navigation';
 import type { Scheduler, SequencePlayer } from './sequence-player';
 import type { GameView } from './view';
+
+// Clockwise around the board, starting top left (see the pad layout in spec/DESIGN.md).
+const WIN_LAP_ORDER: readonly Color[] = ['red', 'blue', 'yellow', 'green'];
 
 export interface ControllerDeps {
   view: GameView;
@@ -72,6 +82,20 @@ export function createController({
     }, PRESS_FLASH_MS);
   }
 
+  // Light only, no sound. Any start, hide or navigation bumps runToken and stops it.
+  async function celebrateWin(token: number): Promise<void> {
+    if (!(await player.wait(WIN_PAUSE_MS)) || token !== runToken) return;
+    for (let lap = 0; lap < WIN_LAPS; lap++) {
+      for (const color of WIN_LAP_ORDER) {
+        view.light(color);
+        if (!(await player.wait(WIN_STEP_MS)) || token !== runToken) return;
+      }
+    }
+    view.light('all');
+    if (!(await player.wait(WIN_FINALE_MS)) || token !== runToken) return;
+    view.light(null);
+  }
+
   function finish(): void {
     // Input is already locked: the engine left the `input` phase before this runs.
     runToken++;
@@ -82,6 +106,7 @@ export function createController({
     view.setSaveNotice(!saved);
     view.showLastResult(finalScore, saved);
     view.focusPlayAgain();
+    if (state.phase === 'won') void celebrateWin(runToken);
   }
 
   function start(): void {
@@ -123,7 +148,11 @@ export function createController({
 
   function onScreenChange(next: Screen): void {
     screen = next;
-    if (next === 'about') pauseGame();
+    if (next === 'about') {
+      // Also stops a running win lap, which is not a paused game.
+      stopEverything();
+      pauseGame();
+    }
     // Runs inside the "back to game" click, so audio may be resumed here.
     else resumeGame();
   }
