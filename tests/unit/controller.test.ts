@@ -193,3 +193,123 @@ describe('controller', () => {
     expect(controller.state.sequence).toHaveLength(1);
   });
 });
+
+describe('controller: background and return', () => {
+  // Colors lit by playback, ignoring the null "all off" entries.
+  const shown = (lit: (Color | null)[], from = 0) => lit.slice(from).filter((c) => c !== null);
+
+  it('pauses mid-playback when hidden and never lights afterwards', async () => {
+    const { controller, audio, lit } = setup();
+    controller.start();
+    await vi.advanceTimersByTimeAsync(ROUND_PAUSE_MS + FLASH_MS / 2);
+    controller.onHide();
+    expect(controller.state.phase).toBe('paused');
+    expect(audio.stopAll).toHaveBeenCalled();
+    expect(lit.at(-1)).toBeNull();
+    const count = lit.length;
+    await vi.runAllTimersAsync();
+    expect(shown(lit, count)).toEqual([]);
+    expect(controller.state.phase).toBe('paused');
+  });
+
+  it('replays the same stage from the start after returning mid-answer on home', async () => {
+    const { controller, results } = setup();
+    controller.start();
+    await answerStage(controller);
+    const state = await waitForInput(controller);
+    controller.pressPad(state.sequence[0]);
+
+    controller.onHide();
+    controller.onShow();
+    expect(controller.state.phase).toBe('playback');
+    const resumed = await waitForInput(controller);
+    expect(resumed.sequence).toEqual(state.sequence);
+    expect(resumed.inputIndex).toBe(0);
+    expect(resumed.completedStages).toBe(1);
+    expect(results.save).not.toHaveBeenCalled();
+  });
+
+  it('hidden between stages: returns to the new stage without an extra color', async () => {
+    const { controller } = setup();
+    controller.start();
+    await answerStage(controller);
+    expect(controller.state.sequence).toHaveLength(2);
+    controller.onHide();
+    controller.onShow();
+    const resumed = await waitForInput(controller);
+    expect(resumed.sequence).toHaveLength(2);
+    expect(resumed.completedStages).toBe(1);
+  });
+
+  it('stays paused when returning while about is showing', async () => {
+    const { controller } = setup();
+    controller.start();
+    await waitForInput(controller);
+    controller.onScreenChange('about');
+    controller.onHide();
+    controller.onShow();
+    await vi.runAllTimersAsync();
+    expect(controller.state.phase).toBe('paused');
+
+    controller.onScreenChange('home');
+    expect(controller.state.phase).toBe('playback');
+  });
+
+  it('does not start, restore or save a game when hidden while idle or finished', async () => {
+    const { controller, results } = setup();
+    controller.onHide();
+    controller.onShow();
+    expect(controller.state.phase).toBe('idle');
+
+    controller.start();
+    await waitForInput(controller);
+    controller.pressPad('red');
+    const lost = controller.state;
+    expect(lost.phase).toBe('lost');
+    controller.onHide();
+    controller.onShow();
+    await vi.runAllTimersAsync();
+    expect(controller.state).toBe(lost);
+    expect(results.save).toHaveBeenCalledOnce();
+  });
+
+  it('rapid repeated hide/show and navigation play the sequence only once', async () => {
+    const { controller, lit } = setup();
+    controller.start();
+    await answerStage(controller);
+    await vi.advanceTimersByTimeAsync(ROUND_PAUSE_MS + 10);
+    controller.onHide();
+    controller.onShow();
+    controller.onShow();
+    controller.onHide();
+    controller.onHide();
+    controller.onShow();
+    controller.onScreenChange('about');
+    controller.onScreenChange('home');
+    controller.onShow();
+    const count = lit.length;
+    const state = await waitForInput(controller);
+    expect(shown(lit, count)).toEqual(state.sequence);
+    expect(state.completedStages).toBe(1);
+    await vi.runAllTimersAsync();
+    expect(controller.state.phase).toBe('input');
+    expect(shown(lit, count)).toEqual(state.sequence);
+  });
+
+  it('ignores the end of a playback that was cancelled by hiding', async () => {
+    const { controller } = setup();
+    controller.start();
+    await vi.advanceTimersByTimeAsync(ROUND_PAUSE_MS + FLASH_MS / 2);
+    controller.onHide();
+    controller.onShow();
+    // The old playback would have finished here; the new one is still in its opening pause.
+    await vi.advanceTimersByTimeAsync(FLASH_MS);
+    expect(controller.state.phase).toBe('playback');
+  });
+
+  it('tries to resume sound on every pad press', () => {
+    const { controller, audio } = setup();
+    controller.pressPad('blue');
+    expect(audio.unlock).toHaveBeenCalledOnce();
+  });
+});

@@ -13,7 +13,7 @@ import {
   type Rng,
 } from './game/engine';
 import { PRESS_FLASH_MS, ROUND_PAUSE_MS } from './game/timing';
-import type { Screen } from './navigation';
+import { INITIAL_SCREEN, type Screen } from './navigation';
 import type { Scheduler, SequencePlayer } from './sequence-player';
 import type { GameView } from './view';
 
@@ -39,6 +39,7 @@ export function createController({
   // Incremented on every start, pause and finish so stale async steps stop.
   let runToken = 0;
   let pressTimer: unknown = null;
+  let screen: Screen = INITIAL_SCREEN;
 
   view.render(state);
   view.showLastResult(results.load(), true);
@@ -92,6 +93,8 @@ export function createController({
   }
 
   function pressPad(color: Color): void {
+    // A press is a user gesture, so it is the next chance to resume sound the browser blocked.
+    audio.unlock();
     const outcome = press(state, color);
     if (outcome.result === 'ignored') return;
     state = outcome.state;
@@ -104,23 +107,45 @@ export function createController({
     }
   }
 
-  function onScreenChange(screen: Screen): void {
-    if (screen === 'about' && isActive(state)) {
-      stopEverything();
-      state = pause(state);
-      view.render(state);
-    } else if (screen === 'home' && state.phase === 'paused') {
-      // Runs inside the "back to game" click, so audio may be resumed here.
-      audio.unlock();
-      state = resume(state);
-      void runStage();
-    }
+  function pauseGame(): void {
+    if (!isActive(state)) return;
+    stopEverything();
+    state = pause(state);
+    view.render(state);
+  }
+
+  function resumeGame(): void {
+    if (state.phase !== 'paused') return;
+    audio.unlock();
+    state = resume(state);
+    void runStage();
+  }
+
+  function onScreenChange(next: Screen): void {
+    screen = next;
+    if (next === 'about') pauseGame();
+    // Runs inside the "back to game" click, so audio may be resumed here.
+    else resumeGame();
+  }
+
+  // Background, lock or leaving the page. Safe to call repeatedly and in any phase.
+  function onHide(): void {
+    stopEverything();
+    pauseGame();
+  }
+
+  // Back in the foreground: replay the stage only if the game screen is showing.
+  // Not a user gesture, so the browser may keep sound blocked until the next press.
+  function onShow(): void {
+    if (screen === 'home') resumeGame();
   }
 
   return {
     start,
     pressPad,
     onScreenChange,
+    onHide,
+    onShow,
     get state(): GameState {
       return state;
     },

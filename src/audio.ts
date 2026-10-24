@@ -38,17 +38,27 @@ export function createAudioAdapter({ onStatus }: AudioAdapterOptions) {
     onStatus(next);
   }
 
-  /** Must be called from inside a user gesture (start, play again, back to game). */
+  function createContext(Ctor: AudioContextConstructor): AudioContext {
+    const ctx = new Ctor();
+    // Sound coming back (for example after a later press) clears the notice.
+    ctx.addEventListener('statechange', () => {
+      if (ctx.state === 'running') report(true);
+    });
+    return ctx;
+  }
+
+  /** Best called from inside a user gesture (start, play again, back to game, pad press). */
   function unlock(): void {
     try {
       const Ctor = getAudioContextConstructor();
       if (!Ctor) throw new Error('Web Audio is not supported');
-      context ??= new Ctor();
+      context ??= createContext(Ctor);
       if (context.state === 'running') {
         report(true);
         return;
       }
       const ctx = context;
+      // A blocked resume may never settle; play() then reports the failure instead.
       ctx.resume().then(
         () => report(ctx.state === 'running'),
         () => report(false),
@@ -59,7 +69,14 @@ export function createAudioAdapter({ onStatus }: AudioAdapterOptions) {
   }
 
   function play(color: Color, ms: number): void {
-    if (!context || context.state !== 'running') return;
+    if (!context) return;
+    if (context.state !== 'running') {
+      // Suspended or interrupted (for example after the page was in the background):
+      // keep the lights going, show the notice and quietly try again.
+      report(false);
+      context.resume().catch(() => {});
+      return;
+    }
     try {
       const now = context.currentTime;
       const end = now + ms / 1000;

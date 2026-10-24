@@ -4,6 +4,7 @@ import '@fontsource/heebo/800.css';
 import './styles.css';
 import { createAudioAdapter } from './audio';
 import { createController } from './controller';
+import { createLifecycle } from './lifecycle';
 import { createNavigation, isScreen } from './navigation';
 import { createSequencePlayer, type Scheduler } from './sequence-player';
 import { loadLastResult, saveLastResult } from './storage';
@@ -56,4 +57,9 @@ document.addEventListener('click', (event) => {
   const trigger = (event.target as Element | null)?.closest<HTMLElement>('[data-nav]');
   const target = trigger?.dataset.nav;
   if (isScreen(target)) navigation.show(target);
+});
+
+createLifecycle({
+  onHide: () => controller.onHide(),
+  onShow: () => controller.onShow(),
 });
