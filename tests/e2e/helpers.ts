@@ -35,6 +35,15 @@ export function recordSequences() {
   }).observe(document, { subtree: true, attributes: true, attributeFilter: ['data-phase'] });
 }
 
+// After clock.install() time still flows in real time; pausing it makes runFor() the only
+// way time advances, so slow machines cannot fire timers between steps. The pause point is
+// far enough ahead of CLOCK_START that a slow page load never passes it.
+export const CLOCK_START = new Date('2026-01-01T00:00:00Z');
+
+export async function freezeClock(page: Page): Promise<void> {
+  await page.clock.pauseAt(CLOCK_START.getTime() + 60_000);
+}
+
 export async function phase(page: Page): Promise<string | undefined> {
   return page.locator('#board').evaluate((el) => (el as HTMLElement).dataset.phase);
 }
