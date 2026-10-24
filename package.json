@@ -12,7 +12,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:live": "SIMON_LIVE_URL=${SIMON_LIVE_URL:-https://osnat-fridman.github.io/simon/} playwright test --project=live"
   },
   "dependencies": {
     "@fontsource/heebo": "5.3.0",

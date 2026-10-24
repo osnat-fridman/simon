@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
+  CLOCK_START,
+  freezeClock,
   RESULT_KEY,
   about,
   answerStage,
@@ -51,9 +53,10 @@ async function startAndReachInput(page: Page): Promise<void> {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.clock.install();
+  await page.clock.install({ time: CLOCK_START });
   await page.addInitScript(recordSequences);
   await page.goto('./');
+  await freezeClock(page);
 });
 
 test('background mid-playback stops the lights; returning replays the same stage', async ({

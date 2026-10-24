@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
+  CLOCK_START,
+  freezeClock,
   RESULT_KEY,
   home,
   about,
@@ -14,12 +16,15 @@ import {
 } from './helpers';
 
 test.beforeEach(async ({ page }) => {
-  await page.clock.install();
+  await page.clock.install({ time: CLOCK_START });
   await page.addInitScript(recordSequences);
   await page.goto('./');
+  await freezeClock(page);
 });
 
 test('plays a full game to a win, then shows and keeps the result', async ({ page }) => {
+  // 55 taps plus clock steps; WebKit on CI runners needs more than the default 30s.
+  test.slow();
   await page.getByRole('button', { name: 'התחל' }).click();
   for (let stage = 1; stage <= 10; stage++) {
     await waitForPhase(page, 'input');
