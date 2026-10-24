@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#070B26" />
+    <meta name="description" content="סיימון – משחק זיכרון עם אורות וצלילים" />
+    <title>סיימון</title>
+  </head>
+  <body>
+    <main class="app">
+      <section id="screen-home" class="screen" aria-labelledby="home-title">
+        <header class="app-header">
+          <h1 id="home-title" class="app-header__title" tabindex="-1">סיימון</h1>
+          <button type="button" class="link-button" data-nav="about">אודות</button>
+        </header>
+
+        <p class="tagline">משחק זיכרון עם אורות וצלילים</p>
+
+        <div class="board">
+          <div class="board__grid">
+            <button type="button" class="pad pad--red" data-color="red" disabled>
+              <span class="pad__label">אדום</span>
+            </button>
+            <button type="button" class="pad pad--blue" data-color="blue" disabled>
+              <span class="pad__label">כחול</span>
+            </button>
+            <button type="button" class="pad pad--green" data-color="green" disabled>
+              <span class="pad__label">ירוק</span>
+            </button>
+            <button type="button" class="pad pad--yellow" data-color="yellow" disabled>
+              <span class="pad__label">צהוב</span>
+            </button>
+          </div>
+        </div>
+
+        <button type="button" class="button button--primary" id="start-button" disabled>
+          התחל
+        </button>
+      </section>
+
+      <section id="screen-about" class="screen" aria-labelledby="about-title" hidden>
+        <header class="app-header">
+          <h1 id="about-title" class="app-header__title" tabindex="-1">אודות</h1>
+        </header>
+
+        <p class="body-text">סיימון הוא משחק זיכרון עם אורות וצלילים.</p>
+
+        <h2 class="heading">איך משחקים?</h2>
+        <div class="instructions">
+          <p>צפו ברצף וחזרו עליו בלחיצה על הצבעים.</p>
+          <p>בכל שלב נוסף צבע לרצף.</p>
+          <p>השלימו 10 שלבים כדי לנצח.</p>
+          <p>טעות אחת מסיימת את המשחק.</p>
+          <p>אין הגבלת זמן לתשובה.</p>
+        </div>
+
+        <div class="result-card">
+          <h2 class="result-card__title">תוצאת המשחק האחרון</h2>
+          <p class="result-card__empty" id="last-result">עדיין אין תוצאה</p>
+        </div>
+
+        <button type="button" class="button button--secondary" data-nav="home">
+          חזרה למשחק
+        </button>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

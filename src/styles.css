@@ -1,0 +1,321 @@
+/* Design tokens from spec/DESIGN.md (style guide). */
+:root {
+  --color-bg: #070b26;
+  --color-surface: #242a35;
+  --color-header: #10163a;
+  --color-text: #f7f9ff;
+  --color-text-secondary: #b8c4dc;
+  --color-accent-line: rgba(25, 207, 255, 0.28);
+  --color-link: #7fdcff;
+
+  --color-blue: #19cfff;
+  --color-red: #ff3548;
+  --color-yellow: #ffe23d;
+  --color-green: #66e34f;
+
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+
+  --radius-button: 16px;
+  --radius-card: 20px;
+  --border-width: 2px;
+  --tap-target: 48px;
+
+  --font-family: 'Heebo', Arial, sans-serif;
+  --line-height-heading: 1.2;
+  --line-height-body: 1.5;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: var(--line-height-body);
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-text);
+  outline-offset: 3px;
+}
+
+/* Layout: one column, mobile-first. */
+.app {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--space-2);
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.screen[hidden] {
+  display: none;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 72px;
+  padding: var(--space-1) var(--space-3);
+  background: linear-gradient(180deg, #151c45 0%, var(--color-header) 100%);
+  border: var(--border-width) solid var(--color-accent-line);
+  border-radius: var(--radius-card);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.app-header__title {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: var(--line-height-heading);
+}
+
+.app-header__title:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.link-button {
+  min-width: var(--tap-target);
+  min-height: var(--tap-target);
+  margin-inline-end: calc(var(--space-1) * -1);
+  padding: 0 var(--space-1);
+  background: none;
+  border: 0;
+  border-radius: 12px;
+  color: var(--color-link);
+  font-size: 18px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+/* Text */
+.tagline {
+  text-align: center;
+  font-size: 18px;
+}
+
+.body-text,
+.instructions p {
+  font-size: 18px;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: var(--line-height-heading);
+  margin-bottom: calc(var(--space-2) * -1);
+}
+
+.instructions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Game board: circular shell with four convex quarter pads. */
+.board {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #2c3340 0%, var(--color-surface) 60%, #1a1f29 100%);
+  box-shadow:
+    0 0 0 var(--border-width) rgba(255, 255, 255, 0.06),
+    0 10px 30px rgba(0, 0, 0, 0.55),
+    inset 0 2px 0 rgba(255, 255, 255, 0.08);
+}
+
+.board__grid {
+  /* Pad positions are fixed and must not mirror in RTL. */
+  direction: ltr;
+  /* Absolutely positioned so pad content can never stretch the square shell (WebKit). */
+  position: absolute;
+  inset: 3%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'red blue'
+    'green yellow';
+  gap: clamp(10px, 3.5vw, 16px);
+}
+
+.pad {
+  --pad-color: var(--color-blue);
+  --pad-inner-radius: 14px;
+  position: relative;
+  display: flex;
+  min-width: var(--tap-target);
+  min-height: var(--tap-target);
+  padding: 0;
+  border: 0;
+  border-radius: var(--pad-inner-radius);
+  background:
+    radial-gradient(circle at var(--glow-x) var(--glow-y), rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 50%),
+    var(--pad-color);
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 255, 255, 0.28),
+    inset 0 -6px 12px rgba(0, 0, 0, 0.18),
+    0 4px 10px rgba(0, 0, 0, 0.45);
+  color: var(--color-bg);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pad:disabled {
+  cursor: default;
+}
+
+.pad__label {
+  margin: auto;
+  font-size: clamp(22px, 8vw, 32px);
+  font-weight: 800;
+  line-height: 1;
+  direction: rtl;
+}
+
+/* Outer corner is a full arc; labels sit slightly toward the board centre. */
+.pad--red {
+  grid-area: red;
+  --pad-color: var(--color-red);
+  --glow-x: 70%;
+  --glow-y: 70%;
+  border-top-left-radius: 100%;
+}
+
+.pad--red .pad__label {
+  transform: translate(10%, 10%);
+}
+
+.pad--blue {
+  grid-area: blue;
+  --glow-x: 30%;
+  --glow-y: 70%;
+  border-top-right-radius: 100%;
+}
+
+.pad--blue .pad__label {
+  transform: translate(-10%, 10%);
+}
+
+.pad--green {
+  grid-area: green;
+  --pad-color: var(--color-green);
+  --glow-x: 70%;
+  --glow-y: 30%;
+  border-bottom-left-radius: 100%;
+}
+
+.pad--green .pad__label {
+  transform: translate(10%, -10%);
+}
+
+.pad--yellow {
+  grid-area: yellow;
+  --pad-color: var(--color-yellow);
+  --glow-x: 30%;
+  --glow-y: 30%;
+  border-bottom-right-radius: 100%;
+}
+
+.pad--yellow .pad__label {
+  transform: translate(-10%, -10%);
+}
+
+/* Buttons */
+.button {
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-button);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: var(--line-height-heading);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.button:disabled {
+  cursor: default;
+}
+
+.button--primary {
+  min-height: 64px;
+  font-size: 24px;
+  background: linear-gradient(180deg, #4fdcff 0%, var(--color-blue) 100%);
+  border: var(--border-width) solid rgba(255, 255, 255, 0.35);
+  color: var(--color-bg);
+  box-shadow: 0 0 18px rgba(25, 207, 255, 0.45);
+}
+
+.button--secondary {
+  background: var(--color-surface);
+  border: var(--border-width) solid rgba(184, 196, 220, 0.55);
+  color: var(--color-text);
+}
+
+/* Result card */
+.result-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  text-align: center;
+  background: linear-gradient(180deg, #2a313d 0%, var(--color-surface) 100%);
+  border: var(--border-width) solid rgba(184, 196, 220, 0.22);
+  border-radius: var(--radius-card);
+}
+
+.result-card__title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: var(--line-height-heading);
+}
+
+.result-card__empty {
+  color: var(--color-text-secondary);
+  font-size: 18px;
+}
