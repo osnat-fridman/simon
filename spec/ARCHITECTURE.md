@@ -278,3 +278,18 @@ Vitest בודק את המנוע עם אקראיות ותזמון נשלטים. P
 **הקשר:** אחרי חזרה מהרקע הדפדפן עשוי להשאיר את ה-AudioContext מושהה ולחסום חידוש שלא במסגרת לחיצה. הבטחת `resume()` עשויה לא להסתיים כלל. בנוסף, Playwright (גם בחלון גלוי) והדפדפנים המובנים בסביבת הפיתוח אינם משנים את `visibilityState` במעבר לשונית או במזעור.
 **החלטה:** `play()` מזהה Context שאינו `running`, מציג את הודעת השמע הקיימת ומנסה בשקט `resume()`; האזנה ל-`statechange` מסתירה את ההודעה כשהשמע חוזר. כל לחיצה על צבע קוראת ל-`unlock()` כדי לחדש שמע במסגרת מחוות משתמש. בבדיקות Playwright מדמים מתוך הדף את `visibilityState`, את `pagehide`/`pageshow(persisted)` ואת AudioContext שנחסם ברקע.
 **השלכות:** אין נוסח או פקד חדש. מעבר רקע אמיתי נבדק ידנית בידי המשתמש בדפדפן רגיל; נעילת מכשיר ושמע בטלפונים אמיתיים נבדקים ב-Milestone 5.
+
+### ADR-12: הגדרת PWA ב-`vite-plugin-pwa` (`generateSW`, `prompt`) ורישום ידני
+**הקשר:** נדרשים Manifest, Precache מלא ועדכון שאינו קוטע משחק, ללא Dialog וללא Reload כפוי.
+**החלטה:** `vite.config.ts` מגדיר `VitePWA` עם `registerType: 'prompt'`, `injectRegister: false`, `skipWaiting: false`, `clientsClaim: false`, `cleanupOutdatedCaches: true` ו-`devOptions.enabled: false`. ה-Manifest: `id`/`start_url`/`scope` = `/simon/`, שם ״סיימון״, `lang: he`, `dir: rtl`, `display: standalone`, רקע ונושא `#070B26`. ה-Precache כולל HTML, JS, CSS, SVG, PNG וקובצי `woff2` בלבד של הגופן (ללא העותקים ב-`woff`). הרישום נעשה ב-`src/pwa.ts` באמצעות `registerSW({ immediate: true })`, בלי `onNeedRefresh` ובלי קריאה לפונקציית העדכון; כשל רישום נרשם ב-Console בלבד.
+**השלכות:** גרסה חדשה נשארת Waiting עד שכל הלשוניות הישנות נסגרות, ואין שום הודעת Offline או עדכון בממשק. ב-`npm run dev` אין Service Worker; PWA נבדק רק מול Build. שינוי נתיב הבסיס מחייב עדכון `BASE` ב-`vite.config.ts` בלבד.
+
+### ADR-13: אייקון ממקור SVG אחד, קובצי PNG נשמרים ב-Repository
+**הקשר:** DESIGN והתמונות אינם מגדירים אייקון אפליקציה, וה-Manifest דורש 192 ו-512 פיקסלים ו-Apple Touch Icon.
+**החלטה:** אייקון מינימלי שנגזר מהלוח: ארבעה רבעים בצבעי המשחק ובמיקומיהם הקבועים, עם מרווח Graphite, על רקע שקוף, ללא טקסט (`public/icons/icon.svg`; לפי בקשת המשתמש). שני אייקונים חייבים רקע אטום ולכן נשארו על רקע Midnight Navy: גרסת Maskable (Android חותך אותה לצורה מלאה; הלוח מוקטן לאזור הבטוח) ו-Apple Touch Icon (iOS ממלא שקיפות בשחור). קובצי ה-PNG (192, 512, Maskable 512, Apple 180) נוצרו פעם אחת מה-SVG באמצעות Playwright ונשמרו ב-`public/icons/`. Favicon הוא `public/favicon.svg`. זו החלטת מימוש לבדיקת המשתמש, לא עיצוב מאושר.
+**השלכות:** אין שלב יצירת אייקונים ב-Build ואין תלות נוספת. שינוי אייקון מחייב יצירה מחדש של קובצי ה-PNG.
+
+### ADR-14: בדיקות PWA מול Build אמיתי עם שרת סטטי מתחלף
+**הקשר:** יש לבדוק Offline, עדכון בין שתי גרסאות וכשל Cache בלי Mock שמסתיר את פעולת ה-Cache.
+**החלטה:** פרויקט Playwright נפרד, `chromium-pwa`, מריץ את `tests/e2e/pwa/` עם Service Workers פעילים ובלי `page.clock`. Offline מדומה ב-`context.setOffline`. לבדיקת העדכון נבנים שני Builds (`dist-a`, `dist-b`) עם `SIMON_BUILD_ID` שונה; המזהה מוזרק ב-`define` (`__BUILD_ID__`) ומסומן ב-`<html data-build>`, וכך ה-JS ו-`sw.js` שונים באמת. שרת Node זעיר (`static-server.ts`) מחליף תיקייה ויכול להחזיר 500 לקובץ אחד. מחיקת נתוני אתר נעשית ב-CDP. WebKit אינו מריץ את בדיקות ה-Service Worker.
+**השלכות:** ה-CI הקיים מריץ את הבדיקות ללא שינוי. התנהגות iOS/Safari ב-PWA תיבדק במכשיר אמיתי ב-Milestone 5. `dist-*/` נוספו ל-`.gitignore`.

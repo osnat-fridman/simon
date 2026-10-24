@@ -6,6 +6,7 @@ import { createAudioAdapter } from './audio';
 import { createController } from './controller';
 import { createLifecycle } from './lifecycle';
 import { createNavigation, isScreen } from './navigation';
+import { registerPwa } from './pwa';
 import { createSequencePlayer, type Scheduler } from './sequence-player';
 import { loadLastResult, saveLastResult } from './storage';
 import { createDomView } from './view';
@@ -63,3 +64,6 @@ createLifecycle({
   onHide: () => controller.onHide(),
   onShow: () => controller.onShow(),
 });
+
+document.documentElement.dataset.build = __BUILD_ID__;
+registerPwa();

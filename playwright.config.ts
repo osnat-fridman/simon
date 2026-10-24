@@ -12,8 +12,14 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}/simon/`,
   },
   projects: [
-    { name: 'chromium-mobile', use: { ...devices['Pixel 7'] } },
-    { name: 'webkit-mobile', use: { ...devices['iPhone 13'] } },
+    { name: 'chromium-mobile', testIgnore: 'pwa/**', use: { ...devices['Pixel 7'] } },
+    { name: 'webkit-mobile', testIgnore: 'pwa/**', use: { ...devices['iPhone 13'] } },
+    // Service worker and offline checks run in Chromium only, with real service workers.
+    {
+      name: 'chromium-pwa',
+      testMatch: 'pwa/**/*.spec.ts',
+      use: { ...devices['Pixel 7'], serviceWorkers: 'allow' },
+    },
   ],
   // Tests run against the production build, served locally.
   webServer: {

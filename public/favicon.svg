@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Simon board: four colored quarters in their fixed game positions. -->
+  <circle cx="256" cy="256" r="254" fill="#242A35"/>
+  <path d="M256 256V16A240 240 0 0 0 16 256Z" fill="#FF3548"/>
+  <path d="M256 256H496A240 240 0 0 0 256 16Z" fill="#19CFFF"/>
+  <path d="M256 256H16A240 240 0 0 0 256 496Z" fill="#66E34F"/>
+  <path d="M256 256V496A240 240 0 0 0 496 256Z" fill="#FFE23D"/>
+  <rect x="245.0" y="16" width="22" height="480" fill="#242A35"/>
+  <rect x="16" y="245.0" width="480" height="22" fill="#242A35"/>
+</svg>
